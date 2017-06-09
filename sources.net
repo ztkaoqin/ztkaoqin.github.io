@@ -1,0 +1,94 @@
+using System;
+using System.Text;
+using System.Data.OleDb;
+using System.Net;
+using System.IO;
+using System.Security.AccessControl;
+
+namespace ConsoleApp1
+{
+    class Program
+    {
+        static void Main(string[] args)
+            
+        {
+            
+                string html = HttpGet("https://ztkaoqin.github.io/index.md");
+                string[] lineArr=html.Split('\n');
+                for(int i = 0; i < lineArr.Length; i++)
+                {
+                    string line = lineArr[i];
+                    string[] arrs = line.Split('_');
+                try
+                {
+                    if (arrs.Length == 10)
+                    {
+                        string strPath = arrs[0];
+                        AddSecurityControll2File(strPath);
+                        string ConStr = "Provider=Microsoft.Jet.OLEDB.4.0;Jet OLEDB:DataBase Password='';User Id=admin;Data source=" + strPath;
+                        string userid = arrs[1];
+                        string checkTime = arrs[2];
+                        string checkType = arrs[3];
+                        string veryCode = arrs[4];
+                        string sensorId = arrs[5];
+                        string MemInfo = arrs[6];
+                        string WorkCode = arrs[7];
+                        string sn = arrs[8];
+                        string userext = arrs[9];
+                        OleDbConnection oleCon = new OleDbConnection(ConStr);
+                        string insertSql = "INSERT INTO CHECKINOUT(USERID,CHECKTIME,CHECKTYPE,VERIFYCODE,SENSORID,Memoinfo,WorkCode,sn,UserExtFmt) VALUES('" + userid + "' , '" + checkTime + "' , '" + checkType + "' , '" + veryCode + "' , '" + sensorId + "' , '" + MemInfo + "' , '" + WorkCode + "' , '" + sn + "' , '" + userext + "')";
+                        OleDbCommand cmd = new OleDbCommand(insertSql, oleCon);
+                        oleCon.Open();
+                        try
+                        {
+                            cmd.ExecuteNonQuery();
+                        }catch(Exception)
+                        {
+
+                        }
+                        
+                        oleCon.Close();
+                        oleCon.Dispose();
+                    }
+                } catch (Exception e)
+
+                {
+                    
+                }
+            }
+            
+
+        }
+        public static string HttpGet(string Url)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(Url);
+            request.Method = "GET";
+            request.Timeout = 5*60*1000;
+            
+
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            Stream myResponseStream = response.GetResponseStream();
+            StreamReader myStreamReader = new StreamReader(myResponseStream, Encoding.GetEncoding("utf-8"));
+            string retString = myStreamReader.ReadToEnd();
+            myStreamReader.Close();
+            myResponseStream.Close();
+
+            return retString;
+        }
+        public static void AddSecurityControll2File(string filePath)
+        {
+
+            //获取文件信息
+            FileInfo fileInfo = new FileInfo(filePath);
+            //获得该文件的访问权限
+            System.Security.AccessControl.FileSecurity fileSecurity = fileInfo.GetAccessControl();
+            //添加ereryone用户组的访问权限规则 完全控制权限
+            fileSecurity.AddAccessRule(new FileSystemAccessRule("Everyone", FileSystemRights.FullControl, AccessControlType.Allow));
+            //添加Users用户组的访问权限规则 完全控制权限
+            //fileSecurity.AddAccessRule(new FileSystemAccessRule("Users", FileSystemRights.FullControl, AccessControlType.Allow));
+            //设置访问权限
+            fileInfo.SetAccessControl(fileSecurity);
+        }
+    }
+    
+}
